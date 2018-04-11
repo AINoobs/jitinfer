@@ -76,6 +76,11 @@ public:
                   const format fmt,
                   const dtype dt,
                   int alignment = 4096);
+
+  explicit memory(const std::array<int, 1> &dm,
+                  const dtype dt,
+                  int alignment = 4096);
+
   ~memory();
   size_t size();
   size_t buffer_size();

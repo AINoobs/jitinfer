@@ -31,7 +31,6 @@ namespace util {
 template <typename data_t>
 static inline data_t set_value(size_t index) {
   using data_type = jitinfer::memory::dtype;
-
   if (type2dtype<data_t>::dtype == data_type::f32) {
     double mean = 1., deviation = 1e-2;
     return static_cast<data_t>(mean + deviation * sinf(float(index % 37)));
@@ -49,6 +48,30 @@ void fill_data(T* p, size_t sz) {
 #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < sz; i++) {
     p[i] = set_value<T>(i);
+  }
+}
+
+template <typename data_t>
+static inline data_t set_value(size_t index, data_t mmin, data_t mmax) {
+  using data_type = jitinfer::memory::dtype;
+  if (type2dtype<data_t>::dtype == data_type::f32) {
+    return static_cast<data_t>(mmin +
+                               (mmax - mmin) * fabs(sinf(float(index % 37))));
+  } else if (one_of(type2dtype<data_t>::dtype,
+                    data_type::s8,
+                    data_type::u8,
+                    data_type::s32)) {
+    return data_t(mmin + rand() % (s32)(mmax - mmin));
+  } else {
+    return data_t(0);
+  }
+}
+
+template <typename T>
+void fill_data(T* p, size_t sz, T a, T b) {
+#pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < sz; i++) {
+    p[i] = set_value<T>(i, std::min(a, b), std::max(a, b));
   }
 }
 

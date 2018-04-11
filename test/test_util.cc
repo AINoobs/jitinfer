@@ -15,6 +15,7 @@
 *******************************************************************************/
 #include "gtest/gtest.h"
 #include "util.h"
+#include "util_test.h"
 
 namespace jitinfer {
 
@@ -40,5 +41,20 @@ TEST(TestUtil, test_util) {
   EXPECT_FALSE(all_true(1, 0, true));
   EXPECT_FALSE(all_true(1, 1, 0, false));
   EXPECT_FALSE(all_true(false, 1, 0, true));
+
+  const int n = 30;
+  float a[n];
+  float fmin = 0.1f, fmax = 1.f;
+  fill_data<float>(a, n, fmin, fmax);
+  for (int i = 0; i < n; ++i) {
+    EXPECT_TRUE(a[i] >= fmin && a[i] <= fmax);
+  }
+
+  int32_t b[n];
+  int32_t smin = -100, smax = 200;
+  fill_data<int32_t>(b, n, smin, smax);
+  for (int i = 0; i < n; ++i) {
+    EXPECT_TRUE(b[i] >= smin && b[i] <= smax);
+  }
 }
 }

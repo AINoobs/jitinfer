@@ -67,6 +67,14 @@ memory::memory(const nchw_dims &dm,
   allocate_buffer(alignment);
 }
 
+memory::memory(const std::array<int, 1> &dm, const dtype dt, int alignment)
+    : dt_(dt) {
+  std_dims_ = {dm[0], 1, 1, 1};
+  fmt_ = format::x;
+  dims_ = {dm[0]};
+  allocate_buffer(alignment);
+}
+
 memory::~memory() { free(data_); }
 
 void memory::allocate_buffer(int alignment) {
