@@ -17,6 +17,24 @@
 #include "util_mkldnn.h"
 #include "util_test.h"
 
+#define CONV0_PARAMS(bias)                                \
+  src, wei, bias, sz_stride, sz_padding, dst, conv0_relu, \
+      (conv0_multi_scales ? conv0_scales_c : conv0_scales_1), conv0_round_mode
+#define CONV0(bias)                   \
+  auto c0 = conv(CONV0_PARAMS(bias)); \
+  c0->submit();                       \
+  check_result(CONV0_PARAMS(bias))
+
+#define CONV1_PARAMS(bias, bias1x1)                                           \
+  src, wei, bias, sz_stride, sz_padding, wei1x1, bias1x1, dst1x1, conv0_relu, \
+      (conv0_multi_scales ? conv0_scales_c : conv0_scales_1),                 \
+      conv0_round_mode, conv1_relu,                                           \
+      (conv1_multi_scales ? conv1_scales_c : conv1_scales_1), conv1_round_mode
+#define CONV1(bias, bias1x1)                   \
+  auto c1 = conv(CONV1_PARAMS(bias, bias1x1)); \
+  c1->submit();                                \
+  check_result(CONV1_PARAMS(bias, bias1x1))
+
 namespace jitinfer {
 
 struct test_conv_params {
@@ -154,38 +172,18 @@ protected:
       for (bool conv0_relu : {true, false}) {
         for (bool conv0_multi_scales : {true, false}) {
           for (round_mode conv0_round_mode : {nearest, down}) {
-// test non-fuse
-#define CONV0_PARAMS(bias)                                \
-  src, wei, bias, sz_stride, sz_padding, dst, conv0_relu, \
-      (conv0_multi_scales ? conv0_scales_c : conv0_scales_1), conv0_round_mode
-#define CONV0(bias)                   \
-  auto c0 = conv(CONV0_PARAMS(bias)); \
-  c0->submit();                       \
-  check_result(CONV0_PARAMS(bias))
-
+            // test non-fuse
             if (conv0_bias) {
               CONV0(bia);
             } else {
               CONV0(nullptr);
             }
-#undef CONV0
-#undef CONV0_PARAMS
 
             // test fuse conv1x1
             for (bool conv1_bias : {true, false}) {
               for (bool conv1_relu : {true, false}) {
                 for (bool conv1_multi_scales : {true, false}) {
                   for (round_mode conv1_round_mode : {nearest, down}) {
-#define CONV1_PARAMS(bias, bias1x1)                                           \
-  src, wei, bias, sz_stride, sz_padding, wei1x1, bias1x1, dst1x1, conv0_relu, \
-      (conv0_multi_scales ? conv0_scales_c : conv0_scales_1),                 \
-      conv0_round_mode, conv1_relu,                                           \
-      (conv1_multi_scales ? conv1_scales_c : conv1_scales_1), conv1_round_mode
-#define CONV1(bias, bias1x1)                   \
-  auto c1 = conv(CONV1_PARAMS(bias, bias1x1)); \
-  c1->submit();                                \
-  check_result(CONV1_PARAMS(bias, bias1x1))
-
                     if (conv0_bias) {
                       if (conv1_bias) {
                         CONV1(bia, bia1x1);
@@ -199,8 +197,6 @@ protected:
                         CONV1(nullptr, nullptr);
                       }
                     }
-#undef CONV1
-#undef CONV1_PARAMS
                   }
                 }
               }
