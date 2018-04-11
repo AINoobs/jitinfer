@@ -1,5 +1,5 @@
 # JIT(Just-In-Time) Inference library
-JIT Inference library, an deep fusion library, support on AVX, AVX2 and AVX512 instructions and AVX512 VNNI later.
+JIT Inference is a deep fusion library focusing on deep learning inference workload, supporting on AVX, AVX2 and AVX512 instructions and AVX512 VNNI later.
 
 ## Compile
 1. mkdir -p build && cd build
@@ -54,6 +54,7 @@ Support on AVX, AVX2 and AVX512
 
 ### 2. Conv fusion
 conv relu and conv1x1relu fusion (will support VNNI).
+ - fuse: conv + relu + conv(with 1x1 weight) + relu
  - supported multi channel scales
  - supported various data type
 
@@ -69,7 +70,4 @@ Docker images is provied for compiling and debuging.
  - `docker pull tensortang/ubuntu` for gcc8.0, gdb and some necessary env.
  - `docker pull tensortang/ubuntu:16.04` for gcc5.4
 
-## How to contribute
-1. `pip install pre-commit`, about pre-commit check [here](http://pre-commit.com/#plugins).
-2. `pre-commit install`. (use `pre-commit uninstall` to uninstall)
-3. Then git commit ...
+## [How to contribute](./doc/HowToContribute.md)
