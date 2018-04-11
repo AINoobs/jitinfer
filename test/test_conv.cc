@@ -20,8 +20,8 @@
 namespace jitinfer {
 
 struct test_conv_params {
-  test_conv_params(int mb,
-                   int ng,
+  test_conv_params(int bs,
+                   int gp,
                    int ic,
                    int ih,
                    int iw,
@@ -35,8 +35,8 @@ struct test_conv_params {
                    int strh,
                    int strw,
                    int oc1x1)
-      : mb(mb),
-        ng(ng),
+      : bs(bs),
+        gp(gp),
         ic(ic),
         ih(ih),
         iw(iw),
@@ -50,8 +50,8 @@ struct test_conv_params {
         sh(strh),
         sw(strw),
         oc1x1(oc1x1) {}
-  int mb;
-  int ng;
+  int bs;
+  int gp;
   int ic, ih, iw;
   int oc, oh, ow;
   int kh, kw;
@@ -60,7 +60,7 @@ struct test_conv_params {
   int oc1x1;
 };
 
-template <typename src_dt, typename wei_dt, typename bia_dt, typename dst_dt>
+template <typename src_t, typename wei_t, typename bia_t, typename dst_t>
 class test_conv : public ::testing::TestWithParam<test_conv_params> {
   void check_result(const test_conv_params& pm,
                     const std::unique_ptr<memory>& src,
@@ -71,7 +71,38 @@ class test_conv : public ::testing::TestWithParam<test_conv_params> {
 
 protected:
   virtual void SetUp() {
+    using format = memory::format;
     test_conv_params p = ::testing::TestWithParam<test_conv_params>::GetParam();
+    std::unique_ptr<memory> src, wei, bia, wei1x1, bias1x1, dst;
+    EXPECT_EQ(p.gp, 1);
+    constexpr format fmt = format::nhwc;
+    auto src_dt = util::type2dtype<src_t>::dtype;
+    auto wei_dt = util::type2dtype<wei_t>::dtype;
+    auto bia_dt = util::type2dtype<bia_t>::dtype;
+    auto dst_dt = util::type2dtype<dst_t>::dtype;
+
+    src.reset(new memory({p.bs, p.ic, p.ih, p.iw}, fmt, src_dt));
+    wei.reset(
+        new memory({p.oc, p.ic, p.kh, p.kw}, format::OIhw4i16o4i, wei_dt));
+    util::fill_data<src_t>(static_cast<src_t*>(src->data()), src->size());
+    util::fill_data<wei_t>(static_cast<wei_t*>(wei->data()), wei->size());
+
+    for (auto fuse_conv : {false, true}) {
+      if (fuse_conv) {
+        dst.reset(new memory({p.bs, p.oc1x1, p.oh, p.ow}, fmt, dst_dt));
+      } else {
+        dst.reset(new memory({p.bs, p.oc, p.oh, p.ow}, fmt, dst_dt));
+      }
+      for (memory::dtype bia1x1_dt : {memory::dtype::undef,
+                                      memory::dtype::s8,
+                                      memory::dtype::s32,
+                                      memory::dtype::f32}) {
+        for (auto with_relu : {false, true}) {
+          for (auto with_bias : {false, true}) {
+          }
+        }
+      }
+    }
   }
 };
 

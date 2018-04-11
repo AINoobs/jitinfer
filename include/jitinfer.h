@@ -54,13 +54,15 @@ public:
     format_undef = 0,
     x,
     nchw,
-    oihw = nchw,
     nhwc,
     OIhw4i16o4i,
     gOIhw4i16o4i,
+    goihw,
+    oihw = nchw,
   };
   typedef std::vector<int> dims;
   typedef std::array<int, 4> nchw_dims;
+  typedef nchw_dims oihw_dims;
 
   enum dtype {
     undef = 0,
@@ -70,9 +72,6 @@ public:
     u8,
   };
 
-  // TODO: enable more format init
-  // explicit memory(const dims& dm, const format fmt, const dtype dt, int
-  // alignment = 64);
   explicit memory(const nchw_dims &dm,
                   const format fmt,
                   const dtype dt,

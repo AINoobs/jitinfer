@@ -39,6 +39,17 @@ memory::dims nchw2format(const memory::nchw_dims &dm,
       out[2] = dm[2];
       out[3] = dm[3];
       break;
+    case format::OIhw4i16o4i:
+      // o/16, i/16, h, w, 4i, 16o, 4i
+      out.resize(7);
+      out[0] = dm[0] / 16;
+      out[1] = dm[1] / 16;
+      out[2] = dm[2];
+      out[3] = dm[3];
+      out[4] = 4;
+      out[5] = 16;
+      out[6] = 4;
+      break;
     default:
       error_and_exit("bad type");
   }

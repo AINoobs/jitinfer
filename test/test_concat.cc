@@ -19,9 +19,6 @@
 
 namespace jitinfer {
 
-using memory = jitinfer::memory;
-using format = jitinfer::memory::format;
-
 struct test_concat_params {
   std::vector<memory::nchw_dims> srcs_dims;
   memory::nchw_dims dst_dims;
@@ -97,7 +94,7 @@ protected:
     auto dt = util::type2dtype<dtype>::dtype;
     std::vector<std::unique_ptr<memory>> srcs(p.srcs_dims.size());
     std::unique_ptr<memory> dst;
-    memory::format fmt = format::nhwc;
+    memory::format fmt = memory::format::nhwc;
     for (size_t i = 0; i < p.srcs_dims.size(); ++i) {
       srcs[i].reset(new memory(p.srcs_dims[i], fmt, dt));
       util::fill_data<dtype>(static_cast<dtype*>(srcs[i]->data()),
