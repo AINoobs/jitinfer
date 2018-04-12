@@ -130,60 +130,58 @@ class test_conv : public ::testing::TestWithParam<util::conv_params> {
           *pd0, *mkldnn_src, *mkldnn_wei, *mkldnn_dst));
     }
     pp.push_back(*fwd0);
-    /*
-        if (with_conv1x1) {
-          // change the size used for init conv1x1 desc
-          util::conv_params pm_conv1 = pm;
-          pm_conv1.ic = pm_conv1.oc;
-          pm_conv1.ih = pm_conv1.oh;
-          pm_conv1.iw = pm_conv1.ow;
-          pm_conv1.oc = pm_conv1.oc1x1;
-          pm_conv1.kh = 1;
-          pm_conv1.kw = 1;
-          pm_conv1.ph = 0;
-          pm_conv1.pw = 0;
-          pm_conv1.sh = 1;
-          pm_conv1.sw = 1;
-          desc1 = util::get_conv_desc(
-              pm_conv1,
-              util::exchange::dtype(jitinfer::memory::dtype::u8),
-              util::exchange::dtype(wei1x1->data_type()),
-              bia1x1 == nullptr
-                  ? util::exchange::dtype(bia1x1->data_type())
-                  : util::exchange::dtype(jitinfer::memory::dtype::undef),
-              util::exchange::dtype(dst->data_type()));
-          pd1 = util::get_conv_pd(desc1,
-                                  eng,
-                                  conv1_scales,
-                                  util::exchange::round_mode(conv1_round_mode),
-                                  conv1_relu);
-          mkldnn_wei1x1.reset(new
-       mkldnn::memory(pd1->weights_primitive_desc()));
-          mkldnn_dst1x1.reset(new mkldnn::memory(pd1->dst_primitive_desc()));
-          util::copy_array<wei_t>((wei_t *)(mkldnn_wei1x1->get_data_handle()),
-                                  (wei_t *)(wei1x1->data()),
-                                  wei1x1->size());
-          if (bia1x1 != nullptr) {
-            mkldnn_bia1x1.reset(new mkldnn::memory(pd1->bias_primitive_desc()));
-            util::copy_array<bia_t>((bia_t *)(mkldnn_bia1x1->get_data_handle()),
-                                    (bia_t *)(bia1x1->data()),
-                                    bia1x1->size());
-            fwd1.reset(new mkldnn::convolution_forward(
-                *pd1, *mkldnn_dst, *mkldnn_wei1x1, *mkldnn_bia1x1,
-       *mkldnn_dst1x1));
-          } else {
-            fwd1.reset(new mkldnn::convolution_forward(
-                *pd1, *mkldnn_dst, *mkldnn_wei1x1, *mkldnn_dst1x1));
-          }
-          pp.push_back(*fwd1);
-        }
-            mkldnn::stream(mkldnn::stream::kind::eager).submit(pp).wait();
-            dst_t *ref_data = with_conv1x1 ? (dst_t
-           *)(mkldnn_dst1x1->get_data_handle())
-                                           : (dst_t
-           *)(mkldnn_dst->get_data_handle());
-            dst_t *jit_data = (dst_t *)(dst->data());
-            util::compare_array<dst_t>(jit_data, ref_data, dst->size());*/
+
+    if (with_conv1x1) {
+      // change the size used for init conv1x1 desc
+      util::conv_params pm_conv1 = pm;
+      pm_conv1.ic = pm_conv1.oc;
+      pm_conv1.ih = pm_conv1.oh;
+      pm_conv1.iw = pm_conv1.ow;
+      pm_conv1.oc = pm_conv1.oc1x1;
+      pm_conv1.kh = 1;
+      pm_conv1.kw = 1;
+      pm_conv1.ph = 0;
+      pm_conv1.pw = 0;
+      pm_conv1.sh = 1;
+      pm_conv1.sw = 1;
+      desc1 = util::get_conv_desc(
+          pm_conv1,
+          util::exchange::dtype(jitinfer::memory::dtype::u8),
+          util::exchange::dtype(wei1x1->data_type()),
+          bia1x1 != nullptr
+              ? util::exchange::dtype(bia1x1->data_type())
+              : util::exchange::dtype(jitinfer::memory::dtype::undef),
+          util::exchange::dtype(dst->data_type()));
+      pd1 = util::get_conv_pd(desc1,
+                              eng,
+                              conv1_scales,
+                              util::exchange::round_mode(conv1_round_mode),
+                              conv1_relu);
+      mkldnn_wei1x1.reset(new mkldnn::memory(pd1->weights_primitive_desc()));
+      mkldnn_dst1x1.reset(new mkldnn::memory(pd1->dst_primitive_desc()));
+      util::copy_array<wei_t>((wei_t *)(mkldnn_wei1x1->get_data_handle()),
+                              (wei_t *)(wei1x1->data()),
+                              wei1x1->size());
+      if (bia1x1 != nullptr) {
+        mkldnn_bia1x1.reset(new mkldnn::memory(pd1->bias_primitive_desc()));
+        util::copy_array<bia_t>((bia_t *)(mkldnn_bia1x1->get_data_handle()),
+                                (bia_t *)(bia1x1->data()),
+                                bia1x1->size());
+        fwd1.reset(new mkldnn::convolution_forward(
+            *pd1, *mkldnn_dst, *mkldnn_wei1x1, *mkldnn_bia1x1, *mkldnn_dst1x1));
+      } else {
+        fwd1.reset(new mkldnn::convolution_forward(
+            *pd1, *mkldnn_dst, *mkldnn_wei1x1, *mkldnn_dst1x1));
+      }
+      pp.push_back(*fwd1);
+    }
+    mkldnn::stream(mkldnn::stream::kind::eager).submit(pp).wait();
+    /*        dst_t *ref_data = with_conv1x1 ? (dst_t
+       *)(mkldnn_dst1x1->get_data_handle())
+                                       : (dst_t
+       *)(mkldnn_dst->get_data_handle());
+        dst_t *jit_data = (dst_t *)(dst->data());
+        util::compare_array<dst_t>(jit_data, ref_data, dst->size());*/
   }
 
 protected:
