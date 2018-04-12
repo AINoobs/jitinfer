@@ -19,6 +19,7 @@
 
 namespace jitinfer {
 
+// TODO: move to util_params.h
 struct test_concat_params {
   std::vector<memory::nchw_dims> srcs_dims;
   memory::nchw_dims dst_dims;
