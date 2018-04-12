@@ -568,10 +568,10 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
   auto wei_dims = wei->std_dims();  // oihw
   auto dst_dims = dst->std_dims();  // nchw
   jcp.bs = src_dims[0];
-  jcp.ic = src_dims[1] / jcp.gp;
+  jcp.ic = wei_dims[1];
   jcp.ih = src_dims[2];
   jcp.iw = src_dims[3];
-  jcp.oc = dst_dims[1] / jcp.gp;
+  jcp.oc = wei_dims[0];
   jcp.oh = dst_dims[2];
   jcp.ow = dst_dims[3];
   jcp.kh = wei_dims[2];
@@ -594,6 +594,11 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
     jcp.loop_order = loop_ngc;
   }
 
+  // check wei dim ic
+  if (wei_dims[1] != src_dims[1]) {
+    return false;
+  }
+
   jcp.fuse_conv1x1 = wei1x1 != nullptr;
   if (jcp.fuse_conv1x1) {
     if (jcp.oc_block % 4 != 0) {
@@ -604,13 +609,19 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
     auto wei1x1_dims = wei1x1->std_dims();  // oihw
     jcp.oc1x1 = wei1x1_dims[0];
     if (!all_true(jcp.oc == wei1x1_dims[1],
-                  jcp.oh == wei1x1_dims[2],
-                  jcp.ow == wei1x1_dims[3])) {
+                  1 == wei1x1_dims[2],
+                  1 == wei1x1_dims[3])) {
       return false;
     }
     jcp.oc1x1_block = 16;
     jcp.nb_oc1x1 = jcp.oc1x1 / jcp.oc1x1_block;
     if (jcp.oc1x1 % jcp.oc1x1_block != 0) {
+      return false;
+    }
+
+  } else {
+    // check wei dim oc
+    if (wei_dims[0] != dst_dims[1]) {
       return false;
     }
   }
