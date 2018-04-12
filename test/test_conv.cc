@@ -176,12 +176,18 @@ class test_conv : public ::testing::TestWithParam<util::conv_params> {
       pp.push_back(*fwd1);
     }
     mkldnn::stream(mkldnn::stream::kind::eager).submit(pp).wait();
-    /*        dst_t *ref_data = with_conv1x1 ? (dst_t
-       *)(mkldnn_dst1x1->get_data_handle())
-                                       : (dst_t
-       *)(mkldnn_dst->get_data_handle());
-        dst_t *jit_data = (dst_t *)(dst->data());
-        util::compare_array<dst_t>(jit_data, ref_data, dst->size());*/
+
+    dst_t *ref_data = with_conv1x1 ? (dst_t *)(mkldnn_dst1x1->get_data_handle())
+                                   : (dst_t *)(mkldnn_dst->get_data_handle());
+    dst_t *jit_data = (dst_t *)(dst->data());
+    if (with_conv1x1) {
+      EXPECT_EQ(dst->size() * sizeof(dst_t),
+                mkldnn_dst1x1->get_primitive_desc().get_size());
+    } else {
+      EXPECT_EQ(dst->size() * sizeof(dst_t),
+                mkldnn_dst->get_primitive_desc().get_size());
+    }
+    // util::compare_array<dst_t>(jit_data, ref_data, dst->size());
   }
 
 protected:
