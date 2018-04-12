@@ -97,7 +97,6 @@ class test_conv : public ::testing::TestWithParam<util::conv_params> {
     // conv0 desc and pd
     desc0 = util::get_conv_desc(
         pm,
-        bia != nullptr,
         util::exchange::dtype(src->data_type()),
         util::exchange::dtype(wei->data_type()),
         bia != nullptr ? util::exchange::dtype(bia->data_type())
@@ -147,7 +146,6 @@ class test_conv : public ::testing::TestWithParam<util::conv_params> {
           pm_conv1.sw = 1;
           desc1 = util::get_conv_desc(
               pm_conv1,
-              bia1x1 != nullptr,
               util::exchange::dtype(jitinfer::memory::dtype::u8),
               util::exchange::dtype(wei1x1->data_type()),
               bia1x1 == nullptr

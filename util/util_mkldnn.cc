@@ -30,7 +30,6 @@ std::unique_ptr<mkldnn::eltwise_forward::primitive_desc> get_mkldnn_relu_pd(
 
 std::unique_ptr<mkldnn::convolution_forward::desc> get_conv_desc(
     const conv_params& p,
-    bool with_bias,
     mkldnn::memory::data_type src_dt,
     mkldnn::memory::data_type wei_dt,
     mkldnn::memory::data_type bia_dt,
@@ -51,8 +50,9 @@ std::unique_ptr<mkldnn::convolution_forward::desc> get_conv_desc(
           ? mkldnn::memory::desc(
                 {p.gp, p.oc / p.gp, p.ic / p.gp, p.kh, p.kw}, wei_dt, wei_fmt)
           : mkldnn::memory::desc({p.oc, p.ic, p.kh, p.kw}, wei_dt, wei_fmt);
-  auto c_bias_desc = with_bias ? mkldnn::memory::desc({p.oc}, bia_dt, bia_fmt)
-                               : mkldnn::memory::desc({}, bia_dt, bia_fmt);
+  auto c_bias_desc = bia_dt != mkldnn::memory::data_type::data_undef
+                         ? mkldnn::memory::desc({p.oc}, bia_dt, bia_fmt)
+                         : mkldnn::memory::desc({}, bia_dt, bia_fmt);
   auto c_dst_desc =
       mkldnn::memory::desc({p.bs, p.oc, p.oh, p.ow}, dst_dt, dst_fmt);
 
@@ -68,7 +68,7 @@ std::unique_ptr<mkldnn::convolution_forward::desc> get_conv_desc(
     }
   }
 
-  if (with_bias) {
+  if (bia_dt != mkldnn::memory::data_type::data_undef) {
     return std::unique_ptr<mkldnn::convolution_forward::desc>(
         new mkldnn::convolution_forward::desc(aprop_kind,
                                               aalgorithm,
@@ -87,7 +87,6 @@ std::unique_ptr<mkldnn::convolution_forward::desc> get_conv_desc(
                                               aalgorithm,
                                               c_src_desc,
                                               c_weights_desc,
-                                              c_bias_desc,
                                               c_dst_desc,
                                               {p.sh, p.sw},
                                               {p.dh, p.dw},

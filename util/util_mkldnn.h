@@ -30,7 +30,6 @@ std::unique_ptr<mkldnn::eltwise_forward::primitive_desc> get_mkldnn_relu_pd(
 
 std::unique_ptr<mkldnn::convolution_forward::desc> get_conv_desc(
     const conv_params& p,
-    bool with_bias,
     mkldnn::memory::data_type src_dt,
     mkldnn::memory::data_type wei_dt,
     mkldnn::memory::data_type bia_dt,
