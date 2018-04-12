@@ -287,10 +287,13 @@ bool op_conv<dst_data_t>::init_conf(jit::jit_conv_conf_t &conf,
   auto wei_dims = wei->std_dims();    // oihw
   auto dst_dims = dst->std_dims();    // nchw
   for (size_t i = 0; i < 2; ++i) {
-    if (dst_dims[i + 2] !=
-        conv_output_size(
-            src_dims[i + 2], wei_dims[i + 2], sz_stride[i], sz_padding[i])) {
-      info("Output image size do not match: %d", i);
+    int expected = conv_output_size(
+        src_dims[i + 2], wei_dims[i + 2], sz_stride[i], sz_padding[i]);
+    if (dst_dims[i + 2] != expected) {
+      info("Output image size do not match at %d, %d != %d",
+           i,
+           dst_dims[i + 2],
+           expected);
       return false;
     }
   }
