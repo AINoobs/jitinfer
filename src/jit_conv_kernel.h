@@ -57,7 +57,6 @@ private:
   using reg64_t = const Xbyak::Reg64;
   using reg32_t = const Xbyak::Reg32;
   using zmm_t = const Xbyak::Zmm;
-  using ymm_t = const Xbyak::Ymm;
   using xmm_t = const Xbyak::Xmm;
 
   reg64_t reg_inp = r8;

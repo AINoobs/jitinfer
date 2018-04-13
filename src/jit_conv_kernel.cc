@@ -587,6 +587,9 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
   if (!all_true(jcp.ic % jcp.ic_block == 0, jcp.oc % jcp.oc_block == 0)) {
     return false;
   }
+  if (!mayiuse(avx512_core)) {
+    return false;
+  }
   jcp.use_vnni = mayiuse(avx512_core_vnni);
   // pick loop order
   jcp.loop_order = loop_cgn;
@@ -598,7 +601,6 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
   if (wei_dims[1] != src_dims[1]) {
     return false;
   }
-
   jcp.fuse_conv1x1 = wei1x1 != nullptr;
   if (jcp.fuse_conv1x1) {
     if (jcp.oc_block % 4 != 0) {
@@ -618,7 +620,6 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
     if (jcp.oc1x1 % jcp.oc1x1_block != 0) {
       return false;
     }
-
   } else {
     // check wei dim oc
     if (wei_dims[0] != dst_dims[1]) {
@@ -659,7 +660,9 @@ bool jit_conv_kernel::init_conf(jit_conv_conf_t &jcp,
 
   // the rest 1 size of ur_w is for src input zmm
   jcp.ur_w = ker_reg_base_idx / (jcp.nb_oc_blocking + 1);
-  if (jcp.ow < jcp.ur_w) jcp.ur_w = jcp.ow;
+  if (jcp.ow < jcp.ur_w) {
+    jcp.ur_w = jcp.ow;
+  }
   jcp.ur_w_tail = jcp.ow % jcp.ur_w;
 
   int r_pad_no_tail = std::max(

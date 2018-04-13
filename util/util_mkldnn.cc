@@ -106,7 +106,7 @@ std::unique_ptr<mkldnn::convolution_forward::primitive_desc> get_conv_pd(
   mkldnn::primitive_attr attr = mkldnn::primitive_attr();
   attr.set_int_output_round_mode(rmode);
   const int count = scales.size();
-  const int mask = count > 1 ? 1 : 0;
+  const int mask = count > 1 ? 1 << 1 : 0;
   check_ge(count, 1);
   attr.set_output_scales(mask, scales);
 

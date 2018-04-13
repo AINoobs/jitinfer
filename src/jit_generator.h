@@ -275,7 +275,8 @@ public:
       static int counter = 0;
 #define MAX_FNAME_LEN 256
       char fname[MAX_FNAME_LEN + 1];
-      snprintf(fname, MAX_FNAME_LEN, "jit_dump_%s.%d.bin", name(), counter);
+      snprintf(
+          fname, MAX_FNAME_LEN, "jitinfer_dump_%s.%d.bin", name(), counter);
       counter++;
 
       FILE *fp = fopen(fname, "w+");
