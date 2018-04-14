@@ -19,6 +19,8 @@
 #include "jit_generator.h"
 
 namespace jitinfer {
+// this is only Zmm: float*16
+enum { scales_extended_size = 16 };
 
 namespace jit {
 
@@ -74,7 +76,6 @@ private:
   reg64_t param = abi_param1;
   reg64_t reg_channel = r15;
   reg64_t reg_tmp = rbp;
-  reg64_t imm_addr64 = r15;
 
   zmm_t zmm_tmp = zmm_t(28);
   zmm_t zmm_one = zmm_t(29);

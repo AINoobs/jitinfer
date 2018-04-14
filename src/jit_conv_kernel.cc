@@ -59,7 +59,9 @@ void jit_conv_kernel::store_1x1output(int ur_w, int ocb1x1) {
   mov(reg_ptr_bia1x1, ptr[param1 + GET_OFF(bia1x1)]);
   mov(reg_ptr_scales1x1, ptr[param1 + GET_OFF(scales1x1)]);
   int scale_offset =
-      jcp.conv1_multi_oc_scale ? sizeof(float) * ocb1x1 * jcp.oc1x1_block : 0;
+      jcp.conv1_multi_oc_scale
+          ? sizeof(float) * ocb1x1 * jcp.oc1x1_block * scales_extended_size
+          : 0;
 
   auto zmm_bias = zmm_tmp;
   if (jcp.conv1_with_bias) {
@@ -102,12 +104,13 @@ void jit_conv_kernel::store_1x1output(int ur_w, int ocb1x1) {
       vmaxps(zmm, zmm_zero, zmm);
     }
     if (jcp.dst_dt != data_type::f32) {
-      if (jcp.conv1_round_mode == round_mode::nearest)
-        vcvtps2dq(zmm | T_rn_sae, zmm);  // cvt back
-      else if (jcp.conv1_round_mode == round_mode::down)
+      if (jcp.conv1_round_mode == round_mode::nearest) {
+        vcvtps2dq(zmm | T_rn_sae, zmm);
+      } else if (jcp.conv1_round_mode == round_mode::down) {
         vcvtps2dq(zmm | T_rd_sae, zmm);
-      else
+      } else {
         assert(!"unimplemented");
+      }
     }
     // 1x1 dst
     switch (jcp.dst_dt) {
@@ -229,7 +232,9 @@ void jit_conv_kernel::store_output(int ur_w) {
   vpxord(zmm_zero, zmm_zero, zmm_zero);
   for (int k = 0; k < jcp.nb_oc_blocking; k++) {
     int scale_offset =
-        jcp.conv0_multi_oc_scale ? sizeof(float) * k * jcp.oc_block : 0;
+        jcp.conv0_multi_oc_scale
+            ? sizeof(float) * k * jcp.oc_block * scales_extended_size
+            : 0;
     auto zmm_bias = zmm_tmp;
     if (jcp.conv0_with_bias) {
       int bias_offset = jcp.typesize_conv0_bia * k * jcp.oc_block;
@@ -264,12 +269,13 @@ void jit_conv_kernel::store_output(int ur_w) {
         vmaxps(zmm, zmm_zero, zmm);
       }
       if (jcp.dst_dt != data_type::f32) {
-        if (jcp.conv0_round_mode == round_mode::nearest)
+        if (jcp.conv0_round_mode == round_mode::nearest) {
           vcvtps2dq(zmm | T_rn_sae, zmm);
-        else if (jcp.conv0_round_mode == round_mode::down)
+        } else if (jcp.conv0_round_mode == round_mode::down) {
           vcvtps2dq(zmm | T_rd_sae, zmm);
-        else
+        } else {
           assert(!"unimplemented");
+        }
       }
       if (jcp.fuse_conv1x1) {
         // always convert to u8, as src of 1x1 conv

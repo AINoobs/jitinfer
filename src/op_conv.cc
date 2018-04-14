@@ -66,15 +66,19 @@ op_conv<dst_data_t>::op_conv(const std::unique_ptr<memory> &src,
   ws1x1_ = (acc_data_t *)aligned_malloc(
       nthreads * ws1x1_per_thread_ * sizeof(acc_data_t), 4096);  // 64??
 
-  // prepare scale data
-  conv0_scales_data_ =
-      (float *)aligned_malloc(conv0_scales.size() * sizeof(float), 64);
-  conv1_scales_data_ =
-      (float *)aligned_malloc(conv1_scales.size() * sizeof(float), 64);
-  util::copy_array(
-      conv0_scales_data_, (float *)(conv0_scales.data()), conv0_scales.size());
-  util::copy_array(
-      conv1_scales_data_, conv1_scales.data(), conv1_scales.size());
+  // prepare scale data, format: scale * 16
+  conv0_scales_data_ = (float *)aligned_malloc(
+      conv0_scales.size() * scales_extended_size * sizeof(float), 64);
+  conv1_scales_data_ = (float *)aligned_malloc(
+      conv1_scales.size() * scales_extended_size * sizeof(float), 64);
+  auto prepare_scale = [&](float *pdst, const float *psrc, size_t sz) {
+    for (size_t i = 0; i < sz; ++i) {
+      util::set_array(pdst, psrc[i], scales_extended_size);
+      pdst += scales_extended_size;
+    }
+  };
+  prepare_scale(conv0_scales_data_, conv0_scales.data(), conv0_scales.size());
+  prepare_scale(conv1_scales_data_, conv1_scales.data(), conv1_scales.size());
 
   // save data point
   // TODO: enable update data handle from outside
@@ -174,8 +178,9 @@ void op_conv<dst_data_t>::infer_conv0() {
                ? (g * jcp.oc * jcp.ic * jcp.kh * jcp.kw / jcp.gp / jcp.gp +
                   ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw / jcp.gp)
                : (ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw));
-      auto scales = jcp.conv0_multi_oc_scale ? conv0_scales_data_ + g_oc
-                                             : conv0_scales_data_;
+      auto scales = jcp.conv0_multi_oc_scale
+                        ? conv0_scales_data_ + g_oc * scales_extended_size
+                        : conv0_scales_data_;
 
       for (int icc = 0; icc < ic_chunks; ++icc) {
         auto src_c = src_w;
@@ -294,8 +299,9 @@ void op_conv<dst_data_t>::infer_conv0conv1() {
                  ? (g * jcp.oc * jcp.ic * jcp.kh * jcp.kw / jcp.gp / jcp.gp +
                     ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw / jcp.gp)
                  : (ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw));
-        auto scales = jcp.conv0_multi_oc_scale ? conv0_scales_data_ + g_oc
-                                               : conv0_scales_data_;
+        auto scales = jcp.conv0_multi_oc_scale
+                          ? conv0_scales_data_ + g_oc * scales_extended_size
+                          : conv0_scales_data_;
 
         for (int icc = 0; icc < ic_chunks; ++icc) {
           auto src_c = src_w;
