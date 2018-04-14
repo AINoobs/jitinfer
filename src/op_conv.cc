@@ -14,9 +14,90 @@
  * limitations under the License.
 *******************************************************************************/
 #include "op_conv.h"
+#include "log.h"
+#include "omp_thread.h"
 #include "util_jitinfer.h"
 
 namespace jitinfer {
+
+template <typename dst_data_t>
+op_conv<dst_data_t>::op_conv(const std::unique_ptr<memory> &src,
+                             const std::unique_ptr<memory> &wei,
+                             const std::unique_ptr<memory> &bia,
+                             std::array<int, 2> sz_stride,
+                             std::array<int, 2> sz_padding,
+                             std::unique_ptr<memory> &dst,
+                             const std::vector<float> &conv0_scales,
+                             const std::vector<float> &conv1_scales,
+                             const std::unique_ptr<memory> &wei1x1,
+                             const std::unique_ptr<memory> &bia1x1,
+                             bool conv0_relu,
+                             bool conv1_relu,
+                             round_mode conv0_round_mode,
+                             round_mode conv1_round_mode)
+    : op(), fuse_conv1x1_(wei1x1 != nullptr) {
+  jit::jit_conv_conf_t conf;
+  if (!init_conf(conf,
+                 src,
+                 wei,
+                 bia,
+                 1,
+                 sz_stride,
+                 sz_padding,
+                 dst,
+                 conv0_scales,
+                 conv1_scales,
+                 wei1x1,
+                 bia1x1,
+                 conv0_relu,
+                 conv1_relu,
+                 conv0_round_mode,
+                 conv1_round_mode)) {
+    error_and_exit("Init Conv op failed!");
+  }
+  kernel_ = new jit::jit_conv_kernel(conf);
+  const auto &jcp = kernel_->jcp;
+  const int nthreads = omp_get_max_threads();
+  ws_per_thread_ = jcp.oh * jcp.ow * jcp.oc_block * jcp.nb_oc_blocking;
+  ws_ = (acc_data_t *)aligned_malloc(
+      nthreads * ws_per_thread_ * sizeof(acc_data_t), 4096);  // 64??
+  // acc format (h, oc/16, ow, 16o)
+  ws1x1_per_thread_ = jcp.oh * jcp.ow * jcp.oc1x1;
+  ws1x1_ = (acc_data_t *)aligned_malloc(
+      nthreads * ws1x1_per_thread_ * sizeof(acc_data_t), 4096);  // 64??
+
+  // prepare scale data
+  conv0_scales_data_ =
+      (float *)aligned_malloc(conv0_scales.size() * sizeof(float), 64);
+  conv1_scales_data_ =
+      (float *)aligned_malloc(conv1_scales.size() * sizeof(float), 64);
+  util::copy_array(
+      conv0_scales_data_, (float *)(conv0_scales.data()), conv0_scales.size());
+  util::copy_array(
+      conv1_scales_data_, conv1_scales.data(), conv1_scales.size());
+
+  // save data point
+  // TODO: enable update data handle from outside
+  src_data_ = reinterpret_cast<const src_data_t *>(src->data());
+  wei_data_ = reinterpret_cast<const wei_data_t *>(wei->data());
+  dst_data_ = reinterpret_cast<dst_data_t *>(dst->data());
+  bia_data_ =
+      bia != nullptr ? reinterpret_cast<const void *>(bia->data()) : NULL;
+  wei1x1_data_ = wei1x1 != nullptr
+                     ? reinterpret_cast<const wei_data_t *>(wei1x1->data())
+                     : NULL;
+  bia1x1_data_ =
+      bia1x1 != nullptr ? reinterpret_cast<const void *>(bia1x1->data()) : NULL;
+}
+
+template <typename dst_data_t>
+op_conv<dst_data_t>::~op_conv() {
+  free(ws_);
+  free(ws1x1_);
+  free(conv0_scales_data_);
+  free(conv1_scales_data_);
+  delete kernel_;
+}
 
 template <typename dst_data_t>
 void op_conv<dst_data_t>::infer() {
