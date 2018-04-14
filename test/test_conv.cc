@@ -230,7 +230,7 @@ protected:
     std::vector<float> conv0_scales_c(p.oc);
     std::vector<float> conv1_scales_1(1);
     std::vector<float> conv1_scales_c(p.oc1x1);
-    const int a = 0.01f, b = 0.6f;
+    const float a = 0.001f, b = 0.3f;
     util::fill_data<float>(conv0_scales_1.data(), conv0_scales_1.size(), a, b);
     util::fill_data<float>(conv0_scales_c.data(), conv0_scales_c.size(), a, b);
     util::fill_data<float>(conv1_scales_1.data(), conv1_scales_1.size(), a, b);

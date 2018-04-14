@@ -47,10 +47,13 @@ void op_conv<dst_data_t>::infer_conv0() {
 
     jit::jit_conv_call_s p = {0};
     auto ws_l = ws_ + ithr * ws_per_thread_;
+    // TODO: change this to my dim_stride after adding benchmark to check perf
+    // nhwc
     size_t src_h_stride = jcp.iw * jcp.ic;
     size_t dst_h_stride = jcp.ow * jcp.oc;
-    size_t wht_h_stride = jcp.kw;
-    size_t wht_ic_stride = jcp.kh * jcp.kw;
+    // o/16, i/16, h, w, 4i, 16o, 4i
+    size_t wht_h_stride = jcp.kw * 4 * 16 * 4;
+    size_t wht_ic_stride = jcp.kh * wht_h_stride;
 
     int n{0}, g{0}, occ{0}, oh_s{0};
     if (jcp.loop_order == loop_cgn) {  // this is default
@@ -75,21 +78,23 @@ void op_conv<dst_data_t>::infer_conv0() {
       int ih_s = -jcp.t_pad + oh_s * jcp.sh;
       int oh_e = oh_s + work_rem > jcp.oh ? jcp.oh : oh_s + work_rem;
 
-      auto bias_w = bias_data
-                        ? bias_data + ((size_t)g_oc * jcp.oc / jcp.gp *
-                                       jcp.typesize_conv0_bia)
-                        : 0;
-      auto dst_w = dst_data_ + (size_t)n * jcp.oc * jcp.oh * jcp.ow +
-                   g_oc * jcp.oh * jcp.ow + oh_s * jcp.ow;
-      auto src_w = src_data_ + (size_t)n * jcp.ic * jcp.ih * jcp.iw +
-                   g_ic * jcp.ih * jcp.iw + ih_s * jcp.iw;
+      auto bias_w = bias_data ? bias_data + (g_oc * jcp.typesize_conv0_bia) : 0;
+      // mkldnn: dst_d.blk_off(n, g_oc, oh_s);
+      auto dst_w = dst_data_ + n * jcp.oc * jcp.oh * jcp.ow + g_oc +
+                   oh_s * jcp.ow * jcp.oc;
+      auto src_w = src_data_ + n * jcp.ic * jcp.ih * jcp.iw + g_ic +
+                   ih_s * jcp.iw * jcp.ic;
+      // mkldnn:  wht_blk_off(weights_d, g, ocb, 0);
+      // g, oc/16/g, i/16/g, h, w, 4i, 16o, 4i
+      // oc/16, i/16, h, w, 4i, 16o, 4i
       auto wht_w =
-          wei_data_ + (jcp.gp > 1 ? ((size_t)g * jcp.oc * jcp.ic * jcp.kh *
-                                         jcp.kw / jcp.gp +
-                                     ocb * jcp.ic * jcp.kh * jcp.kw / jcp.gp)
-                                  : ((size_t)ocb * jcp.ic * jcp.kh * jcp.kw));
-      auto scales =
-          conv0_scales_data_ ? conv0_scales_data_ + g_oc : conv0_scales_data_;
+          wei_data_ +
+          (jcp.gp > 1
+               ? (g * jcp.oc * jcp.ic * jcp.kh * jcp.kw / jcp.gp / jcp.gp +
+                  ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw / jcp.gp)
+               : (ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw));
+      auto scales = jcp.conv0_multi_oc_scale ? conv0_scales_data_ + g_oc
+                                             : conv0_scales_data_;
 
       for (int icc = 0; icc < ic_chunks; ++icc) {
         auto src_c = src_w;
@@ -160,8 +165,9 @@ void op_conv<dst_data_t>::infer_conv0conv1() {
     size_t src_h_stride = jcp.iw * jcp.ic;
     size_t out1x1_h_stride = jcp.ow * jcp.oc1x1;
     size_t acc1x1_h_stride = jcp.ow * jcp.oc1x1;
-    size_t wht_h_stride = jcp.kw;
-    size_t wht_ic_stride = jcp.kh * jcp.kw;
+    // o/16, i/16, h, w, 4i, 16o, 4i
+    size_t wht_h_stride = jcp.kw * 4 * 16 * 4;
+    size_t wht_ic_stride = jcp.kh * wht_h_stride;
 
     int n{0}, g{0}, oh_s{0};
     if (jcp.loop_order == loop_cgn) {  // this is default
@@ -191,19 +197,24 @@ void op_conv<dst_data_t>::infer_conv0conv1() {
         int ih_s = -jcp.t_pad + oh_s * jcp.sh;
         int oh_e = oh_s + work_rem > jcp.oh ? jcp.oh : oh_s + work_rem;
 
-        auto bias_w = bias_data
-                          ? bias_data + ((size_t)g_oc * jcp.oc / jcp.gp *
-                                         jcp.typesize_conv0_bia)
-                          : 0;
-        auto src_w = src_data_ + (size_t)n * jcp.ic * jcp.ih * jcp.iw +
-                     g_ic * jcp.ih * jcp.iw + ih_s * jcp.iw;
+        auto bias_w =
+            bias_data ? bias_data + (g_oc * jcp.typesize_conv0_bia) : 0;
+        // mkldnn: dst_d.blk_off(n, g_oc, oh_s);
+        auto dst_w = dst_data_ + n * jcp.oc * jcp.oh * jcp.ow + g_oc +
+                     oh_s * jcp.ow * jcp.oc;
+        auto src_w = src_data_ + n * jcp.ic * jcp.ih * jcp.iw + g_ic +
+                     ih_s * jcp.iw * jcp.ic;
+        // mkldnn:  wht_blk_off(weights_d, g, ocb, 0);
+        // g, oc/16/g, i/16/g, h, w, 4i, 16o, 4i
+        // oc/16, i/16, h, w, 4i, 16o, 4i
         auto wht_w =
-            wei_data_ + (jcp.gp > 1 ? ((size_t)g * jcp.oc * jcp.ic * jcp.kh *
-                                           jcp.kw / jcp.gp +
-                                       ocb * jcp.ic * jcp.kh * jcp.kw / jcp.gp)
-                                    : ((size_t)ocb * jcp.ic * jcp.kh * jcp.kw));
-        auto scales =
-            conv0_scales_data_ ? conv0_scales_data_ + g_oc : conv0_scales_data_;
+            wei_data_ +
+            (jcp.gp > 1
+                 ? (g * jcp.oc * jcp.ic * jcp.kh * jcp.kw / jcp.gp / jcp.gp +
+                    ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw / jcp.gp)
+                 : (ocb * jcp.oc_block * jcp.ic * jcp.kh * jcp.kw));
+        auto scales = jcp.conv0_multi_oc_scale ? conv0_scales_data_ + g_oc
+                                               : conv0_scales_data_;
 
         for (int icc = 0; icc < ic_chunks; ++icc) {
           auto src_c = src_w;

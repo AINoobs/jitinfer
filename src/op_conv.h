@@ -88,6 +88,7 @@ public:
     bia1x1_data_ = bia1x1 != nullptr
                        ? reinterpret_cast<const void *>(bia1x1->data())
                        : NULL;
+    // TODO:refine scale!! malloc scale buffer, align 64?
     conv0_scales_data_ = reinterpret_cast<const float *>(conv0_scales.data());
     conv1_scales_data_ = reinterpret_cast<const float *>(conv1_scales.data());
   }

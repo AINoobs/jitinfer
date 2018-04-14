@@ -56,7 +56,7 @@ static inline data_t set_value(size_t index, data_t mmin, data_t mmax) {
   using data_type = jitinfer::memory::dtype;
   if (type2dtype<data_t>::dtype == data_type::f32) {
     return static_cast<data_t>(mmin +
-                               (mmax - mmin) * fabs(sinf(float(index % 37))));
+                               (mmax - mmin) * (float)(rand() % 100) / 100.f);
   } else if (one_of(type2dtype<data_t>::dtype,
                     data_type::s8,
                     data_type::u8,
