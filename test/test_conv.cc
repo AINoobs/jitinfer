@@ -279,7 +279,6 @@ protected:
 };
 
 // @note: the srcs, wei and dst are always given as nchw
-// TODO: add more test cases
 #define test_conv_case(src, wei, bia, dst)                                   \
   using test_conv_##src##wei##bia##dst = test_conv<src, wei, bia, dst>;      \
   TEST_P(test_conv_##src##wei##bia##dst, TestsConv) {}                       \
@@ -287,13 +286,22 @@ protected:
       TestConv,                                                              \
       test_conv_##src##wei##bia##dst,                                        \
       ::testing::Values(                                                     \
+          util::conv_params{2, 1, 16, 4, 4, 16, 4, 4, 3, 3, 1, 1, 1, 1, 16}, \
           util::conv_params{2, 1, 32, 4, 4, 32, 4, 4, 3, 3, 1, 1, 1, 1, 32}, \
           util::conv_params{                                                 \
               2, 1, 32, 13, 13, 32, 11, 11, 3, 3, 0, 0, 1, 1, 64},           \
           util::conv_params{                                                 \
               2, 1, 32, 13, 13, 32, 13, 13, 3, 3, 1, 1, 1, 1, 32},           \
           util::conv_params{                                                 \
-              2, 1, 32, 120, 360, 64, 120, 360, 3, 3, 1, 1, 1, 1, 32}))
+              2, 1, 32, 120, 360, 64, 120, 360, 3, 3, 1, 1, 1, 1, 32},       \
+          util::conv_params{                                                 \
+              2, 1, 64, 60, 180, 128, 60, 180, 3, 3, 1, 1, 1, 1, 64},        \
+          util::conv_params{                                                 \
+              2, 1, 128, 30, 90, 256, 30, 90, 3, 3, 1, 1, 1, 1, 128},        \
+          util::conv_params{                                                 \
+              2, 1, 256, 15, 45, 512, 15, 45, 3, 3, 1, 1, 1, 1, 256},        \
+          util::conv_params{                                                 \
+              2, 1, 1024, 15, 45, 512, 15, 45, 3, 3, 1, 1, 1, 1, 80}))
 
 // data type src, weight, bias, dst
 // test_conv_case(u8, s8, s8, u8);
