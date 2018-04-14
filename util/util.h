@@ -95,7 +95,7 @@ inline int find_dividable(int val, int divisor) {
 }
 
 template <typename T>
-void copy_array(T *dst, T *src, size_t sz) {
+void copy_array(T *dst, const T *src, size_t sz) {
 // do not use memcpy, in case of memory aligment
 #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < sz; ++i) {

@@ -19,6 +19,7 @@
 #include "jit_conv_kernel.h"
 #include "log.h"
 #include "omp_thread.h"
+#include "util.h"
 
 namespace jitinfer {
 
@@ -36,8 +37,8 @@ public:
                    std::array<int, 2> sz_stride,
                    std::array<int, 2> sz_padding,
                    std::unique_ptr<memory> &dst,
-                   std::vector<float> conv0_scales = {1.f},
-                   std::vector<float> conv1_scales = {1.f},
+                   const std::vector<float> &conv0_scales,
+                   const std::vector<float> &conv1_scales,
                    const std::unique_ptr<memory> &wei1x1 = nullptr,
                    const std::unique_ptr<memory> &bia1x1 = nullptr,
                    bool conv0_relu = false,
@@ -75,6 +76,17 @@ public:
     ws1x1_ = (acc_data_t *)aligned_malloc(
         nthreads * ws1x1_per_thread_ * sizeof(acc_data_t), 4096);  // 64??
 
+    // prepare scale data
+    conv0_scales_data_ =
+        (float *)aligned_malloc(conv0_scales.size() * sizeof(float), 64);
+    conv1_scales_data_ =
+        (float *)aligned_malloc(conv1_scales.size() * sizeof(float), 64);
+    util::copy_array(conv0_scales_data_,
+                     (float *)(conv0_scales.data()),
+                     conv0_scales.size());
+    util::copy_array(
+        conv1_scales_data_, conv1_scales.data(), conv1_scales.size());
+
     // save data point
     // TODO: enable update data handle from outside
     src_data_ = reinterpret_cast<const src_data_t *>(src->data());
@@ -88,9 +100,6 @@ public:
     bia1x1_data_ = bia1x1 != nullptr
                        ? reinterpret_cast<const void *>(bia1x1->data())
                        : NULL;
-    // TODO:refine scale!! malloc scale buffer, align 64?
-    conv0_scales_data_ = reinterpret_cast<const float *>(conv0_scales.data());
-    conv1_scales_data_ = reinterpret_cast<const float *>(conv1_scales.data());
   }
 
   ~op_conv() {
@@ -108,8 +117,8 @@ protected:
                  std::array<int, 2> sz_stride,
                  std::array<int, 2> sz_padding,
                  std::unique_ptr<memory> &dst,
-                 std::vector<float> conv0_scales,
-                 std::vector<float> conv1_scales,
+                 const std::vector<float> &conv0_scales,
+                 const std::vector<float> &conv1_scales,
                  const std::unique_ptr<memory> &wei1x1,
                  const std::unique_ptr<memory> &bia1x1,
                  bool conv0_relu,
@@ -126,7 +135,7 @@ private:
   const src_data_t *src_data_;
   const wei_data_t *wei_data_, *wei1x1_data_;
   const void *bia_data_, *bia1x1_data_;
-  const float *conv0_scales_data_, *conv1_scales_data_;
+  float *conv0_scales_data_, *conv1_scales_data_;
   dst_data_t *dst_data_;
   jit::jit_conv_kernel *kernel_;
   size_t ws_per_thread_;
