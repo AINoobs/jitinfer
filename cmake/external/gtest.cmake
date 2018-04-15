@@ -56,7 +56,7 @@ ExternalProject_Add(
                     -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
                     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                     -DBUILD_GMOCK=ON
-                    -Dgtest_disable_pthreads=ON
+                    -Dgtest_disable_pthreads=OFF
                     -Dgtest_force_shared_crt=ON
                     -DCMAKE_BUILD_TYPE=${THIRD_PARTY_BUILD_TYPE}
                     ${EXTERNAL_OPTIONAL_ARGS}
