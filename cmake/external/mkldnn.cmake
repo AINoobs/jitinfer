@@ -59,7 +59,7 @@ ExternalProject_Add(
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DEPENDS             ${MKLDNN_DEPENDS}
     GIT_REPOSITORY      "https://github.com/01org/mkl-dnn.git"
-    GIT_TAG             "8758fe6ec8a1695b6ac1570b749818a188d0ad66" #based on Mar 32th, or try "v0.13"
+    GIT_TAG             "a5f607723cde3d188ee4ba6de9e2ece978d2fcc9" # Apr 7th"
     PREFIX              ${MKLDNN_SOURCES_DIR}
     UPDATE_COMMAND      ""
     CMAKE_ARGS          -DCMAKE_INSTALL_PREFIX=${MKLDNN_INSTALL_DIR}
