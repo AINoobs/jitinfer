@@ -265,7 +265,8 @@ void jit_conv_kernel::store_output(int ur_w) {
         vaddps(zmm, zmm, zmm_bias);
       }
       vmulps(zmm, zmm, EVEX_compress_addr(reg_ptr_scales, scale_offset));
-      if (jcp.conv0_with_relu) {
+      if (jcp.conv0_with_relu || jcp.dst_dt == data_type::u8 ||
+          jcp.fuse_conv1x1) {
         vmaxps(zmm, zmm_zero, zmm);
       }
       if (jcp.dst_dt != data_type::f32) {

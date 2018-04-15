@@ -304,11 +304,11 @@ protected:
               2, 1, 1024, 15, 45, 512, 15, 45, 3, 3, 1, 1, 1, 1, 80}))
 
 // data type src, weight, bias, dst
-// test_conv_case(u8, s8, s8, u8);
+test_conv_case(u8, s8, s8, u8);
 test_conv_case(u8, s8, s8, s8);
 test_conv_case(u8, s8, s8, s32);
 test_conv_case(u8, s8, s8, f32);
-// test_conv_case(u8, s8, s32, u8);
+test_conv_case(u8, s8, s32, u8);
 test_conv_case(u8, s8, s32, s8);
 test_conv_case(u8, s8, s32, s32);
 test_conv_case(u8, s8, s32, f32);
