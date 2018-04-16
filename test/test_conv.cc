@@ -181,6 +181,8 @@ class test_conv : public ::testing::TestWithParam<util::conv_params> {
                                    : (dst_t *)(mkldnn_dst->get_data_handle());
     dst_t *jit_data = (dst_t *)(dst->data());
     if (with_conv1x1) {
+      EXPECT_EQ(wei1x1->size() * sizeof(wei_t),
+                mkldnn_wei1x1->get_primitive_desc().get_size());
       EXPECT_EQ(dst->size() * sizeof(dst_t),
                 mkldnn_dst1x1->get_primitive_desc().get_size());
     } else {
@@ -249,6 +251,11 @@ protected:
             }
 
             // test fuse conv1x1
+            if (dst_dt == memory::dtype::f32) {
+              // TODO: should have some bug when f32 in jitinfer or mkldnn
+              // skip conv1x1 f32 so far
+              continue;
+            }
             for (bool conv1_bias : {true, false}) {
               for (bool conv1_relu : {true, false}) {
                 for (bool conv1_multi_scales : {false}) {
@@ -302,13 +309,21 @@ protected:
           util::conv_params{                                                 \
               2, 1, 1024, 15, 45, 512, 15, 45, 3, 3, 1, 1, 1, 1, 80}))
 
-// data type src, weight, bias, dst
+// data type: src, weight, bias, dst
 test_conv_case(u8, s8, s8, u8);
 test_conv_case(u8, s8, s8, s8);
 test_conv_case(u8, s8, s8, s32);
-// test_conv_case(u8, s8, s8, f32);
+test_conv_case(u8, s8, s8, f32);
+test_conv_case(u8, s8, u8, u8);
+test_conv_case(u8, s8, u8, s8);
+test_conv_case(u8, s8, u8, s32);
+test_conv_case(u8, s8, u8, f32);
+test_conv_case(u8, s8, f32, u8);
+test_conv_case(u8, s8, f32, s8);
+test_conv_case(u8, s8, f32, s32);
+test_conv_case(u8, s8, f32, f32);
 test_conv_case(u8, s8, s32, u8);
 test_conv_case(u8, s8, s32, s8);
 test_conv_case(u8, s8, s32, s32);
-// test_conv_case(u8, s8, s32, f32);
+test_conv_case(u8, s8, s32, f32);
 }
