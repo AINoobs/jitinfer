@@ -100,7 +100,7 @@ void jit_conv_kernel::store_1x1output(int ur_w, int ocb1x1) {
     }
     vmulps(zmm, zmm, EVEX_compress_addr(reg_ptr_scales1x1, scale_offset));
     // relu
-    if (jcp.conv1_with_relu) {
+    if (jcp.conv1_with_relu || jcp.dst_dt == data_type::u8) {
       vmaxps(zmm, zmm_zero, zmm);
     }
     if (jcp.dst_dt != data_type::f32) {

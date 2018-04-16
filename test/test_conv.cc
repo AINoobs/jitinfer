@@ -247,30 +247,29 @@ protected:
             } else {
               CONV0(nullptr);
             }
-            /*
-                        // test fuse conv1x1
-                        for (bool conv1_bias : {true, false}) {
-                          for (bool conv1_relu : {true, false}) {
-                            for (bool conv1_multi_scales : {false}) {
-                              for (round_mode conv1_round_mode : {nearest,
-               down}) {
-                                if (conv0_bias) {
-                                  if (conv1_bias) {
-                                    CONV1(bia, bia1x1);
-                                  } else {
-                                    CONV1(bia, nullptr);
-                                  }
-                                } else {
-                                  if (conv1_bias) {
-                                    CONV1(nullptr, bia1x1);
-                                  } else {
-                                    CONV1(nullptr, nullptr);
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }*/
+
+            // test fuse conv1x1
+            for (bool conv1_bias : {true, false}) {
+              for (bool conv1_relu : {true, false}) {
+                for (bool conv1_multi_scales : {false}) {
+                  for (round_mode conv1_round_mode : {nearest, down}) {
+                    if (conv0_bias) {
+                      if (conv1_bias) {
+                        CONV1(bia, bia1x1);
+                      } else {
+                        CONV1(bia, nullptr);
+                      }
+                    } else {
+                      if (conv1_bias) {
+                        CONV1(nullptr, bia1x1);
+                      } else {
+                        CONV1(nullptr, nullptr);
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -307,9 +306,9 @@ protected:
 test_conv_case(u8, s8, s8, u8);
 test_conv_case(u8, s8, s8, s8);
 test_conv_case(u8, s8, s8, s32);
-test_conv_case(u8, s8, s8, f32);
+// test_conv_case(u8, s8, s8, f32);
 test_conv_case(u8, s8, s32, u8);
 test_conv_case(u8, s8, s32, s8);
 test_conv_case(u8, s8, s32, s32);
-test_conv_case(u8, s8, s32, f32);
+// test_conv_case(u8, s8, s32, f32);
 }

@@ -27,7 +27,8 @@ namespace jit {
 struct jit_conv_kernel : public jit_generator {
   DECLARE_JIT_KERNEL(jit_conv_kernel);
 
-  jit_conv_kernel(jit_conv_conf_t ajcp) : jcp(ajcp) {
+  jit_conv_kernel(jit_conv_conf_t ajcp)
+      : jit_generator(nullptr, 384 * 1024), jcp(ajcp) {
     generate();
     jit_ker_ = (void (*)(jit_conv_call_s *))getCode();
   }
