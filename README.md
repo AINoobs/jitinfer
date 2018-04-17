@@ -1,32 +1,44 @@
 # JIT(Just-In-Time) Inference library
 JIT Inference is a deep fusion library focusing on deep learning inference workload, supporting on AVX, AVX2 and AVX512 instructions and AVX512 VNNI later.
 
-## Compile
-1. mkdir -p build && cd build
-2. cmake ..
-3. make -j `nproc`
-4. make test
-5. make install
+## Build
+You can just run [makell.sh](./makeall.sh) to build and install, or run as below:
 
-It will download, compile and install all dependencies, including:
-- [Xbyak](https://github.com/herumi/xbyak), used for JIT kernels.
-- [Intel(R) MKL-DNN](https://github.com/intel/mkl-dnn), used for benchmark comparion and refernce in gtest.
-- [Intel(R) MKLML](https://github.com/intel/mkl-dnn/releases/download/v0.13/mklml_lnx_2018.0.2.20180127.tgz), used for Intel OpenMP library.
-- [gtest](https://github.com/google/googletest)
-- [gflags](https://github.com/gflags/gflags)
+``` bash
+mkdir -p build && cd build
+# debug cmake
+# cmake .. -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_INSTALL_PREFIX=./tmp # -DWITH_VERBOSE=ON -DWITH_COLD_CACHE=ON
 
-### Benchmark
-`cmake -DWITH_BENCHMARK=ON`, default is enabled. \
-Then can run `sh ./build/benchmark/bench_concat`
+# release cmake
+cmake .. -DCMAKE_INSTALL_PREFIX=./yourfolder # -DWITH_VERBOSE=ON -DWITH_DUMP_CODE=ON # -DWITH_COLD_CACHE=OFF
+
+# minmal release
+# This will only generate jitinfer library without any benchmark utilities and gtests
+# cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel
+
+make clean
+make -j `nproc`
+make test
+make install
+```
+
+## Use
+
+### How to Benchmark
+Add `-DWITH_BENCHMARK=ON` in cmake option, then rebuild and you can run`./build/benchmark/bench_concat`.
 
 ### How to profiling
-`cmake -DWITH_VERBOSE=ON` and `export JITINFER_VERBOSE=1` \
-This `WITH_VERBOSE`, cmake option, default is enabled in DEBUG and disabled in Release.
+Add `-DWITH_VERBOSE=ON` in cmake options, then export env:
+``` bash
+export JITINFER_VERBOSE=1
+```
+This will print the submit time of each operator at every iteration.
 
 ### How to dump code
-`cmake -DWITH_DUMP_CODE=ON` and `export JITINFER_DUMP_CODEE=1` \
-This `WITH_DUMP_CODE`, cmake option, default is enabled in DEBUG and disabled in Release.
-
+Add `-DWITH_DUMP_CODE=ON` in cmake options, then export env:
+``` bash
+export JITINFER_DUMP_CODEE=1
+```
 Then, when run some apps, you can get some file like `jit_dump_jit_concat_kernel.0.bin`, then use `xed` to view the ASM. For exapmle:
 ```
 $xed -ir jit_dump_jit_concat_kernel.0.bin
@@ -43,11 +55,23 @@ XDIS 9: PUSH      BASE       57                       push edi
 
 ```
 
+### Cmake Options
+- `-DWITH_BENCHMARK=ON`
+- `-DWITH_VERBOSE=ON`
+- `WITH_DUMP_CODE`
+
+This three options are supported. They are enabled in Debug mode and disabled in Release mode by default.
+
 ### MinSizeRel
-This will only generate jitinfer library without any benchmark utilities and gtests. \
+This will only generate jitinfer library without any benchmark utilities and gtests. All the cmake options shown above are disabled. \
 `cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel`
 
-## Operators
+## Docker env
+Docker images are provided for compiling and debuging.
+ - `docker pull tensortang/ubuntu` for gcc8.0, gdb and some necessary env.
+ - `docker pull tensortang/ubuntu:16.04` for gcc5.4
+
+## Supported Operators
 
 ### 1. Concat and relu fusion.
 Support on AVX, AVX2 and AVX512
@@ -65,9 +89,15 @@ conv relu and conv1x1relu fusion (will support VNNI).
   | bias | u8/s8/s32/f32 |
   | dst | u8/s8/s32/f32 |
 
-## Docker
-Docker images is provied for compiling and debuging.
- - `docker pull tensortang/ubuntu` for gcc8.0, gdb and some necessary env.
- - `docker pull tensortang/ubuntu:16.04` for gcc5.4
+## Third party
+Xbyak and Intel(R) MKLML are the only two necessary dependencies for Jitinfer library.
+
+Below are the third parties:
+- [Xbyak](https://github.com/herumi/xbyak), for JIT kernels.
+- [Intel(R) MKLML](https://github.com/intel/mkl-dnn/releases/download/v0.13/mklml_lnx_2018.0.2.20180127.tgz), for Intel OpenMP library.
+- [Intel(R) MKL-DNN](https://github.com/intel/mkl-dnn), for benchmark comparion and gtest refernce.
+- [gtest](https://github.com/google/googletest), for test cases framework.
+- [gflags](https://github.com/gflags/gflags), for benchmark arguments.
+
 
 ## [How to contribute](./doc/HowToContribute.md)
