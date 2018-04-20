@@ -93,6 +93,7 @@ void jit_conv_kernel::store_1x1output(int ur_w, int ocb1x1) {
     // out format is nhw,c/16,16o
     int offset = jcp.typesize_out * (jw * jcp.oc1x1 + ocb1x1 * jcp.oc1x1_block);
     auto addr = EVEX_compress_addr(reg_ptr_out1x1, offset);
+    // TODO: can optimize more, do not need to cvt2f32 sometimes
     // cvt to f32
     vcvtdq2ps(zmm, zmm);
     if (jcp.conv1_with_bias) {

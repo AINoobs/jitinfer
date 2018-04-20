@@ -76,7 +76,7 @@ memory::dtype str2dtype(const std::string& str) {
     return dtype::u8;
   } else {
     error_and_exit("Unknow data type %s", str.c_str());
-    return dtype::f32;
+    return dtype::undef;
   }
 }
 

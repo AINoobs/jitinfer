@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
     oss << "Benchmark with data type: u8s8s8" << FLAGS_dtype;
     oss << "\nData sizes: In(" << pm.bs << ", " << pm.ic << ", " << pm.ih
         << ", " << pm.iw << ")@NCHW ==> Kernel(" << pm.kh << ", " << pm.kw
-        << "), ==> Out(" << pm.bs << ", " << pm.oc << ", " << pm.oh << ", "
+        << ") ==> Out(" << pm.bs << ", " << pm.oc << ", " << pm.oh << ", "
         << pm.ow << ")@NCHW ==> Kernel(1, 1) ==> Out(" << pm.bs << ", "
         << pm.oc1x1 << ", " << pm.oh << "," << pm.ow << ")@NCHW";
     info("%s", oss.str().c_str());

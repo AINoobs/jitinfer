@@ -252,7 +252,7 @@ protected:
 
             // test fuse conv1x1
             if (dst_dt == memory::dtype::f32) {
-              // TODO: should have some bug when f32 in jitinfer or mkldnn
+              // TODO: should have some bug when output f32 in jitinfer
               // skip conv1x1 f32 so far
               continue;
             }
